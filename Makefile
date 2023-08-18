@@ -29,3 +29,7 @@ clean:
 	-rm binz80/*
 	-rm distro/*.img
 	-rm distro/*.dsk
+	-rm test/*.btk
+	-rm test/*.obj
+	-rm test/*.lib
+	-rm test/*.com
