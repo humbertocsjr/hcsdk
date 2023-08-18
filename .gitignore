@@ -1,3 +1,8 @@
 /bin
 /bini86
 /binz80
+*.obj
+*.btk
+*.com
+*.img
+*.dsk
