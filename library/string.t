@@ -61,7 +61,7 @@ module string;
 
  _digits() return "0123456789ABCDEF";
 
- var buf::66; ! 64-bit binary + sign
+ var buf::67; ! 64-bit binary + sign
 
  public ntoa(n, r) do
 	var	digits;
@@ -106,7 +106,7 @@ module string;
 		g := %1;
 		i := i+1;
 	end
-	lim := lp /\ lp[0]-> lp[0]: MAXLEN;
+	lim := (lp /\ lp[0]) -> lp[0]: MAXLEN;
 	for (i=i, lim) do
 		j := t3x.memscan(digits, s::i, r);
 		if (j < 0) leave;

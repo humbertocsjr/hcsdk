@@ -1,4 +1,9 @@
 
+_start()
+{
+    main();
+}
+
 memcopy()
 {
 

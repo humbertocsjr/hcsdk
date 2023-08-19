@@ -8,6 +8,7 @@ T3XDOS = $(T3XPATH)tx-dos $(patsubst %.t,%,$<) $(patsubst %.com,%,$@)
 
 include hcb/conf.mk
 include hclink/conf.mk
+include hcexe/conf.mk
 include test/conf.mk
 include distro/conf.mk
 
@@ -20,7 +21,7 @@ binz80:
 bini86: 
 	mkdir -p bini86
 
-build: $(HCB) $(HCLINK)
+build: $(HCB) $(HCLINK) $(HCEXE)
 
 
 clean:

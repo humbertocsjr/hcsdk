@@ -16,7 +16,7 @@ HCBZ80 TEST
     Compile B Language Tokens
     In..: TEST.BTK
     Out.: TEST.OBJ
-HCLIB TEST LIBB TEST
+HCEXE TEST LIBB.LIB TEST.OBJ
     Add called functions from library
     Out.: TEST.LIB
     Lib.: LIBB.LIB

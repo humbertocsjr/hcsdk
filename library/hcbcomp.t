@@ -4,7 +4,7 @@ module hcbcomp;
 
 
 const NAME_LEN = 80;
-const TOK_LEN = 80;
+public const TOK_LEN = 80;
 const LINE_LEN = 256;
 const LINE_BUF_LEN = 400;
 const BUF_LEN = 130;
@@ -20,6 +20,7 @@ var _locals_count;
 var _level;
 var _in;
 var _in_name::NAME_LEN;
+var _in_filename::NAME_LEN;
 var _in_buf::BUF_LEN;
 var _in_count;
 var _out;
@@ -93,14 +94,14 @@ local_match(name, errmsg) do
     error(errmsg);
 end
 
-local_find(name, msgerr) do
+local_find(name) do
     var i;
     for(i = 0, _locals_count) do
         if(\string.comp(name, _locals[i])) do
             return i;
         end
     end
-    return 0;
+    return -1;
 end
 
 public emit_tok(type, buf, len) do
@@ -215,12 +216,22 @@ match(type, errmsg) do
     end
 end
 
+
+match_eol() do
+    match(tokens.TK_END_COMMAND, "';' expected");
+end
+
+decl compile(0);
+decl do_expr(0);
+
+
 do_auto() do
     if(_level > 0)
         if(\_can_auto) error("can't declare variables after start of a function");
     next();
     while(_curr \= tokens.TK_END_COMMAND) do
         match(tokens.TK_ID, "Variable name expected");
+        local_add(_curr_text);
         emit_tok(hclink.LNK_DATA, 0, 0);
         ie(_level = 0) do
             emit_tok(hclink.LNK_PUBLIC_PTR, _curr_text, _curr_len);
@@ -234,12 +245,6 @@ do_auto() do
     end
 end
 
-match_eol() do
-    match(tokens.TK_END_COMMAND, "';' expected");
-end
-
-decl compile(0);
-
 do_block() do
     match(tokens.TK_BLOCK_OPEN, "'{' expected");
     while(next()) do
@@ -252,10 +257,10 @@ end
 do_function(name) do
     var i, argpos;
     emit_tok(hclink.LNK_CODE, 0,0);
+    emit_tok(hclink.LNK_CLEAR_LOCAL, 0, 0);
     emit_tok(hclink.LNK_FUNC_START, name, string.length(name));
     emit_tok(hclink.LNK_PUBLIC_PTR, name, string.length(name));
     emit_tok(hclink.LNK_GLOBAL_PTR, name, string.length(name));
-    emit_tok(hclink.LNK_CLEAR_LOCAL, 0, 0);
     emit_tok(hclink.LNK_LOCAL_PTR, name, string.length(name));
     local_clear();
     local_add(name);
@@ -285,20 +290,7 @@ do_function(name) do
     _level := 0;
 end
 
-do_expr() do
-    var i, val;
-    ie(_curr = tokens.TK_NUM) do
-        val := 0;
-        for(i = 0, _curr_len) do
-            val := val * 10 + (_curr_text::i) - '0';
-        end
-        asm_rega_set_value(val);
-    end else ie(_curr = tokens.TK_STR) do
-        asm_rega_from_data_str(_curr_text);
-    end else error("Expression expected");
-end
-
-do_call(name) do
+do_args() do
     var stack_size;
     stack_size := 0;
     match(tokens.TK_PARAM_OPEN, "'(' expected");
@@ -313,8 +305,57 @@ do_call(name) do
         end
     end
     match(tokens.TK_PARAM_CLOSE, "')' expected");
+    return stack_size;
+end
+
+do_expr() do
+    var i, val, neg, name::TOK_LEN;
+    var stack_size;
+    neg := 0;
+    if(_curr = tokens.TK_MATH_SUBTRACT) do
+        neg := %1;
+        next();
+    end
+    ie(_curr = tokens.TK_NUM) do
+        val := 0;
+        for(i = 0, _curr_len) do
+            val := val * 10 + (_curr_text::i) - '0';
+        end
+        if(neg) val := -val;
+        asm_rega_set_value(val);
+    end else ie(_curr = tokens.TK_STR) do
+        if(neg) error("Unsupported string operation");
+        asm_rega_from_data_str(_curr_text);
+    end else ie(_curr = tokens.TK_ID) do
+        i := local_find(_curr_text);
+        ie(i = -1) do
+            error("Name not found");
+        end else do
+            t.memcopy(name, _curr_text, TOK_LEN);
+            ie(_next = tokens.TK_PARAM_OPEN) do
+                stack_size := do_args();
+                asm_call(name);
+                if(stack_size \= 0) asm_call_stack_restore(stack_size);
+            end else do
+                asm_rega_from_local_contents(name);
+            end
+        end
+    end else error("Expression expected");
+end
+
+do_call(name) do
+    var stack_size;
+    stack_size := do_args();
     asm_call(name);
     if(stack_size \= 0) asm_call_stack_restore(stack_size);
+    next();
+    match_eol();
+end
+
+do_atrib(name) do
+    next();
+    do_expr();
+    asm_rega_to_local_contents(name);
     next();
     match_eol();
 end
@@ -329,6 +370,8 @@ do_id() do
         end else do 
             do_call(name);
         end
+    end else ie(_curr = tokens.TK_ATRIB) do
+        do_atrib(name);
     end else do
         io.writes("[ ID Type not implemented -> Token ID:");
         io.writes(string.ntoa(_curr, 10));
@@ -405,6 +448,7 @@ public main(arch_name, arch_file) do
 			t.memcopy(@_in_name::in_size, ".btk", 5);
 			t.memcopy(@_out_name::out_size, ".obj", 5);
         end
+        string.copy(_in_filename, _in_name);
         _out := t.open(_out_name, T3X.OWRITE);
         if(_out = -1) do
             error("File can't be opened");
@@ -412,6 +456,7 @@ public main(arch_name, arch_file) do
         compile_file(_in_name);
         emit_tok(hclink.LNK_END, 0, 0);
         t.close(_out);
+        t.remove(_in_filename);
         if(_in_count \= 0) do
             io.writeln("[ OK ]");
             io.nl();

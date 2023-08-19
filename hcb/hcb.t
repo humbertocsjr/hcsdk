@@ -346,7 +346,7 @@ compile_file(filename) do
         io.writes(".");
     end
     io.writeln("[ OK ]");
-    if(count = 0) error("File empty");
+    if(count = 0) error("Empty file");
 
     t.close(_in);
     _in := old_in;
@@ -360,7 +360,7 @@ end
 
 
 show_help() do
-    io.writeln("Reads B Source Code and generate B Language Tokens.");
+    io.writeln("Reads B Source Code and generates B Language Tokens.");
     io.writeln("");
     io.writeln("Usage: ");
     io.writeln(" hcb [infile.b] [outfile.btk]");
