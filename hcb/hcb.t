@@ -303,7 +303,7 @@ compile_line() do
     col := 0;
     for(i = 0, TOK_SIZE) do
         if(_tok[i] = tokens.TK_NONE) leave;
-        if(col \= _tok_col[i]) emit(tokens.TK_MARKER_LINE, @_tok_col[i], 2);
+        if(col \= _tok_col[i]) emit(tokens.TK_MARKER_COL, @_tok_col[i], 2);
         emit(_tok[i], @_tok_buf::_tok_start[i], _tok_len[i]);
         col := _tok_col[i];
     end

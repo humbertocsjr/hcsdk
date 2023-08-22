@@ -294,11 +294,11 @@ step0() do
         end else ie(_curr = hclink.LNK_LOCAL_CONST_NAME) do
             _const_id := local_add(NT_PTR, _curr_text, 0);
         end else ie(_curr = hclink.LNK_LOCAL_CONST_VALUE) do
-            _name_value_list[_const_id] := string.aton(_curr_text, 10, _curr_len);
+            _name_value_list[_const_id] := string.aton(_curr_text, 10, @_curr_len);
         end else ie(_curr = hclink.LNK_GLOBAL_CONST_NAME) do
             _const_id := global_add(NT_PTR, _curr_text, 0);
         end else ie(_curr = hclink.LNK_GLOBAL_CONST_VALUE) do
-            _name_value_list[_const_id] := string.aton(_curr_text, 10, _curr_len);
+            _name_value_list[_const_id] := string.aton(_curr_text, 10, @_curr_len);
         end else ie(_curr = hclink.LNK_REF_START) do
             ref_size := 0;
             while(next()) do

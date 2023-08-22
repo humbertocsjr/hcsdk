@@ -7,6 +7,7 @@ T3XCPM = $(T3XPATH)tx-cpm $(patsubst %.t,%,$<) $(patsubst %.com,%,$@)
 T3XDOS = $(T3XPATH)tx-dos $(patsubst %.t,%,$<) $(patsubst %.com,%,$@)
 
 include hcb/conf.mk
+include hcasm/conf.mk
 include hclink/conf.mk
 include hcexe/conf.mk
 include test/conf.mk
@@ -21,7 +22,7 @@ binz80:
 bini86: 
 	mkdir -p bini86
 
-build: $(HCB) $(HCLINK) $(HCEXE)
+build: $(HCB) $(HCASM) $(HCLINK) $(HCEXE)
 
 
 clean:

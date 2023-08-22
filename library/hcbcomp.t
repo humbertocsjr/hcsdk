@@ -3,6 +3,7 @@
 module hcbcomp;
 
 
+
 const NAME_LEN = 80;
 public const TOK_LEN = 80;
 const LINE_LEN = 256;
@@ -308,7 +309,7 @@ do_args() do
     return stack_size;
 end
 
-do_expr() do
+expr5() do
     var i, val, neg, name::TOK_LEN;
     var stack_size;
     neg := 0;
@@ -340,7 +341,118 @@ do_expr() do
                 asm_rega_from_local_contents(name);
             end
         end
+    end else ie(_curr = tokens.TK_PARAM_OPEN) do
+        next();
+        do_expr();
+        match(_curr = tokens.TK_PARAM_CLOSE, "'(' expected.");
     end else error("Expression expected");
+end
+
+
+expr4() do
+    var op;
+    expr5();
+    while(_next = tokens.TK_BIT_SHL \/ _next = tokens.TK_BIT_SHR)do
+        op := _next;
+        next();
+        next();
+        asm_rega_push();
+        expr5();
+        ie(op = tokens.TK_BIT_SHL)
+            asm_shift_left_pop_from_rega();
+        else ie(op = tokens.TK_BIT_SHR)
+            asm_shift_right_pop_from_rega();
+        else error("Operation unknown");
+    end
+end
+
+expr3() do
+    var op;
+    expr4();
+    while(_next = tokens.TK_MATH_MULTIPLY \/ _next = tokens.TK_MATH_DIVIDE \/ _next = tokens.TK_MATH_MODULE)do
+        op := _next;
+        next();
+        next();
+        asm_rega_push();
+        expr4();
+        ie(op = tokens.TK_MATH_MULTIPLY)
+            asm_multiply_pop_from_rega();
+        else ie(op = tokens.TK_MATH_DIVIDE)
+            asm_divide_pop_from_rega();
+        else ie(op = tokens.TK_MATH_MODULE)
+            asm_module_pop_from_rega();
+        else error("Operation unknown");
+    end
+end
+
+expr2() do
+    var op;
+    expr3();
+    while(_next = tokens.TK_MATH_SUBTRACT \/ _next = tokens.TK_MATH_SUM)do
+        op := _next;
+        next();
+        next();
+        asm_rega_push();
+        expr3();
+        ie(op = tokens.TK_MATH_SUM)
+            asm_add_pop_from_rega();
+        else ie(op = tokens.TK_MATH_SUBTRACT)
+            asm_subtract_pop_from_rega();
+        else error("Operation unknown");
+    end
+end
+
+
+expr1() do
+    var op, lbl_true, lbl_false, lbl_end;
+    expr2();
+    while(_next = tokens.TK_CMP_OR)do
+        lbl_true := asm_new_num_label();
+        lbl_false := asm_new_num_label();
+        lbl_end := asm_new_num_label();
+        op := _next;
+        next();
+        next();
+        ie(op = tokens.TK_CMP_OR) do
+            asm_jmp_if_true(lbl_true);
+        end else error("Operation unknown");
+        expr2();
+        ie(op = tokens.TK_CMP_OR) do
+            asm_jmp_if_true(lbl_true);
+        end else error("Operation unknown");
+        asm_num_label(lbl_false);
+        asm_rega_clear();
+        asm_jmp(lbl_end);
+        asm_num_label(lbl_true);
+        asm_rega_set_value(0xffff);
+        asm_num_label(lbl_end);
+    end
+end
+
+do_expr() do
+    var op, lbl_true, lbl_false, lbl_end;
+    expr1();
+    while(_next = tokens.TK_CMP_AND)do
+        lbl_true := asm_new_num_label();
+        lbl_false := asm_new_num_label();
+        lbl_end := asm_new_num_label();
+        op := _next;
+        next();
+        next();
+        ie(op = tokens.TK_CMP_AND) do
+            asm_jmp_if_false(lbl_false);
+        end else error("Operation unknown");
+        expr1();
+        ie(op = tokens.TK_CMP_AND) do
+            asm_jmp_if_true(lbl_true);
+        end else error("Operation unknown");
+        asm_num_label(lbl_false);
+        asm_rega_clear();
+        asm_jmp(lbl_end);
+        asm_num_label(lbl_true);
+        asm_rega_set_value(0xffff);
+        asm_num_label(lbl_end);
+    end
 end
 
 do_call(name) do
@@ -379,6 +491,60 @@ do_id() do
     end
 end
 
+do_if() do
+    var lbl_false, lbl_end;
+    lbl_false := asm_new_num_label();
+    next();
+    match(tokens.TK_PARAM_OPEN, "'(' expected");
+    next();
+    do_expr();
+    next();
+    match(tokens.TK_PARAM_CLOSE, "')' expected");
+    asm_jmp_if_false(lbl_false);
+    compile();
+    ie(_curr = tokens.TK_ID_ELSE) do
+        lbl_end := asm_new_num_label();
+        asm_jmp(lbl_end);
+        asm_num_label(lbl_false);
+        compile();
+        asm_num_label(lbl_end);
+    end else do
+        asm_num_label(lbl_false);
+    end
+end
+
+do_while() do
+    var lbl_end, lbl_start;
+    lbl_end := asm_new_num_label();
+    next();
+    match(tokens.TK_PARAM_OPEN, "'(' expected");
+    next();
+    asm_num_label(lbl_start);
+    do_expr();
+    next();
+    match(tokens.TK_PARAM_CLOSE, "')' expected");
+    asm_jmp_if_false(lbl_end);
+    compile();
+    asm_jmp(lbl_start);
+    asm_num_label(lbl_end);
+end
+
+do_until() do
+    var lbl_end, lbl_start;
+    lbl_end := asm_new_num_label();
+    next();
+    match(tokens.TK_PARAM_OPEN, "'(' expected");
+    next();
+    asm_num_label(lbl_start);
+    do_expr();
+    next();
+    match(tokens.TK_PARAM_CLOSE, "')' expected");
+    asm_jmp_if_true(lbl_end);
+    compile();
+    asm_jmp(lbl_start);
+    asm_num_label(lbl_end);
+end
+
 compile() do
     ie(_curr = tokens.TK_ID_AUTO) do
         do_auto();
@@ -391,6 +557,14 @@ compile() do
         end
         ie(_curr = tokens.TK_ID) do
             do_id();
+        end else ie(_curr = tokens.TK_ID_IF) do
+            do_if();
+        end else ie(_curr = tokens.TK_ID_WHILE) do
+            do_while();
+        end else ie(_curr = tokens.TK_ID_UNTIL) do
+            do_until();
+        end else ie(_curr = tokens.TK_BLOCK_OPEN) do
+            do_block();
         end else do
             io.writes("[ Token not implemented ID:");
             io.writes(string.ntoa(_curr, 10));

@@ -2,8 +2,16 @@
 main()
 {
     auto a;
-    a = 1;
-    test(a, 1, 2, 3, "Oiee");
+    a = 6&&1+2+3-4;
+    if(a)
+    {
+        a = 10;
+    }
+    else
+    {
+        a = 20;
+    }
+    putchar();
 }
 
 test()
