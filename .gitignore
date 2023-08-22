@@ -1,8 +1,10 @@
 /bin
 /bini86
 /binz80
+/test/*.lib
 *.obj
 *.btk
 *.com
 *.img
 *.dsk
+*.bin

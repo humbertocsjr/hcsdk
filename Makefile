@@ -33,5 +33,6 @@ clean:
 	-rm distro/*.dsk
 	-rm test/*.btk
 	-rm test/*.obj
+	-rm test/*.bin
 	-rm test/*.lib
 	-rm test/*.com
