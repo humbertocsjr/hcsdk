@@ -343,7 +343,7 @@ end
 
 do
     var out_size, ext, name::NAME_LEN;
-    io.writeln("HCLink Executable Generator v0.8");
+    io.writeln("HCLink Executable Generator v1.0");
     io.writeln("(c)2023 by Humberto Costa dos Santos Jr");
 
     io.writeln("");

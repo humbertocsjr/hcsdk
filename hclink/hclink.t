@@ -523,7 +523,7 @@ end
 
 do
     var type::10, type_size, out_size, ext, name::NAME_LEN;
-    io.writeln("HCLink Multiplatform Linker v0.8");
+    io.writeln("HCLink Multiplatform Linker v1.0");
     io.writeln("(c)2023 by Humberto Costa dos Santos Jr");
 
     io.writeln("");
