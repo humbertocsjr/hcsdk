@@ -125,6 +125,17 @@ tokenize() do
                 _tok[_tok_curr] := tokens.TK_STR;
                 _tok_start[_tok_curr] := pos+1;
                 _tok_buf::pos := c;
+            end else ie(c = 39) do
+                _tok[_tok_curr] := tokens.TK_NUM;
+                _tok_start[_tok_curr] := pos;
+                _tok_buf::pos := ((n / 100) mod 10) + '0';
+                pos := pos + 1;
+                _tok_buf::pos := ((n / 10) mod 10) + '0';
+                pos := pos + 1;
+                _tok_buf::pos := ((n) mod 10) + '0';
+                pos := pos + 1;
+                _tok_buf::pos := 0;
+                i := i + 2;
             end else ie(char.space(c)) do
             end else ie(c = ',') do
                 _tok[_tok_curr] := tokens.TK_COMMA;

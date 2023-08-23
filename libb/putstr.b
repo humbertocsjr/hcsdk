@@ -1,5 +1,4 @@
 
 putstr(str)
 {
-    
 }

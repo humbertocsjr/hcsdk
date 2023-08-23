@@ -497,7 +497,7 @@ var _paramb[PARAM_LIST];
 var _paramc[PARAM_LIST];
 
 compile() do
-    var exists, params, i, cmd::TOK_LEN, cmd_len;
+    var exists, params, i, cmd::TOK_LEN, cmd_len, ok;
     emit_tok(hclink.LNK_MARKER_COL, @_curr_col, 2);
     
     params := 0;
@@ -535,6 +535,8 @@ compile() do
             emit_tok(hclink.LNK_DATA, 0, 0);
             _segment := hclink.LNK_DATA;
             return;
+        end else ie(\string.comp(cmd, "LABEL")) do
+                emit_tok(hclink.LNK_GLOBAL_PTR, _prev_text, _prev_len);
         end else do
         end
 
@@ -558,7 +560,7 @@ compile() do
             ie(_curr = tokens.TK_ID /\ \string.comp("EQU", _curr_text_up)) do
                 error("EQU not implemented");
             end else do
-                emit_tok(hclink.LNK_GLOBAL_PTR, _prev_text, _prev_len);
+                error("Command unknown");
             end
             return;
         end
@@ -576,8 +578,14 @@ compile() do
                         _instrs[i][INSTR_ARGS] = params /\
                         _instrs[i][INSTR_ARGA_TYPE] = _parama[PARAM_TYPE]
                     ) do
-                        gen1(_instrs[i][INSTR_GEN], _instrs[i], _parama);
-                        return;
+                        ok := %1;
+                        if(_instrs[i][INSTR_ARGA_REG] \= REG_NONE /\ _parama[PARAM_REG] \= _instrs[i][INSTR_ARGA_REG])do
+                            ok := 0;
+                        end
+                        if(ok) do
+                            gen1(_instrs[i][INSTR_GEN], _instrs[i], _parama);
+                            return;
+                        end
                     end
                 end
                 i := i + 1;
@@ -599,8 +607,17 @@ compile() do
                                 _instrs[i][INSTR_ARGA_TYPE] = _parama[PARAM_TYPE] /\
                                 _instrs[i][INSTR_ARGB_TYPE] = _paramb[PARAM_TYPE]
                             ) do
-                                gen2(_instrs[i][INSTR_GEN], _instrs[i], _parama, _paramb);
-                                return;
+                                ok := %1;
+                                if(_instrs[i][INSTR_ARGA_REG] \= REG_NONE /\ _parama[PARAM_REG] \= _instrs[i][INSTR_ARGA_REG])do
+                                    ok := 0;
+                                end
+                                if(_instrs[i][INSTR_ARGB_REG] \= REG_NONE /\ _paramb[PARAM_REG] \= _instrs[i][INSTR_ARGB_REG])do
+                                    ok := 0;
+                                end
+                                if(ok) do
+                                    gen2(_instrs[i][INSTR_GEN], _instrs[i], _parama, _paramb);
+                                    return;
+                                end
                             end
                         end
                     end
@@ -624,8 +641,20 @@ compile() do
                                     _instrs[i][INSTR_ARGB_TYPE] = _paramb[PARAM_TYPE] /\
                                     _instrs[i][INSTR_ARGC_TYPE] = _paramc[PARAM_TYPE]
                                 ) do
-                                    gen3(_instrs[i][INSTR_GEN], _instrs[i], _parama, _paramb, _paramc);
-                                    return;
+                                    ok := %1;
+                                    if(_instrs[i][INSTR_ARGA_REG] \= REG_NONE /\ _parama[PARAM_REG] \= _instrs[i][INSTR_ARGA_REG])do
+                                        ok := 0;
+                                    end
+                                    if(_instrs[i][INSTR_ARGB_REG] \= REG_NONE /\ _paramb[PARAM_REG] \= _instrs[i][INSTR_ARGB_REG])do
+                                        ok := 0;
+                                    end
+                                    if(_instrs[i][INSTR_ARGC_REG] \= REG_NONE /\ _paramc[PARAM_REG] \= _instrs[i][INSTR_ARGC_REG])do
+                                        ok := 0;
+                                    end
+                                    if(ok) do
+                                        gen3(_instrs[i][INSTR_GEN], _instrs[i], _parama, _paramb, _paramc);
+                                        return;
+                                    end
                                 end
                             end
                         end

@@ -11,8 +11,8 @@ libb/cpmz80.lib: libb/oscpm.obj libb/putstr.obj
 	@bin/hclink lib libb/cpmz80 $^
 
 bin/cpmz80.lib: bin/hclink bin/hcasmz80 bin/hcb bin/hcbz80 libb/cpmz80.lib
-	@cp $^ $@
+	@cp libb/cpmz80.lib $@
 binz80/cpmz80.lib: bin/hclink bin/hcasmz80 bin/hcb bin/hcbz80 libb/cpmz80.lib
-	@cp $^ $@
+	@cp libb/cpmz80.lib $@
 bini86/cpmz80.lib: bin/hclink bin/hcasmz80 bin/hcb bin/hcbz80 libb/cpmz80.lib
-	@cp $^ $@
+	@cp libb/cpmz80.lib $@

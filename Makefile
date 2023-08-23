@@ -32,6 +32,8 @@ clean:
 	-rm binz80/*
 	-rm distro/*.img
 	-rm distro/*.dsk
+	-rm libb/*.obj
+	-rm libb/*.lib
 	-rm test/*.btk
 	-rm test/*.obj
 	-rm test/*.bin

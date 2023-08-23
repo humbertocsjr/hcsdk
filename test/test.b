@@ -1,5 +1,7 @@
 
 main()
 {
-    teststring();
+    putchar('O');
+    putchar('i');
+    putchar('e');
 }

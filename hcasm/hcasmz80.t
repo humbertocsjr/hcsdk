@@ -16,7 +16,8 @@ struct INSTR_LIST = INSTR_GEN, INSTR_CMD, INSTR_ASM, INSTR_ARGS,
 struct PARAM_LIST = PARAM_TYPE, PARAM_REG, PARAM_VALUE, PARAM_LABEL;
 
 struct GEN_LIST = GEN_NONE, GEN_SIMPLE, GEN_LD_REG_REG, GEN_LD_MEM_REG, GEN_LD_REG_MEM,
-    GEN_SIMPLE_WITH_VALUE_WORD, GEN_LD_REG_VAL;
+    GEN_SIMPLE_WITH_VALUE_WORD_PARAMA, GEN_SIMPLE_WITH_VALUE_WORD_PARAMB, GEN_LD_REG_VAL,
+    GEN_SIMPLE_WITH_VALUE_BYTE_PARAMA, GEN_SIMPLE_WITH_VALUE_BYTE_PARAMB;
 
 var _instrs;
 
@@ -50,6 +51,21 @@ instr_simple_byte(ins) do
     hcasm.emit_asm(ins[INSTR_ASM]);
 end
 
+instr_simple_byte_value_byte(ins, parama) do
+    hcasm.emit_asm(ins[INSTR_ASM]);
+    ie(\parama[PARAM_LABEL]) do
+        hcasm.emit_tok(hcasm.segment(), @parama[PARAM_VALUE], 1);
+    end else do
+        hcasm.emit_tok(hclink.LNK_REF_START,0,0);
+        hcasm.emit_tok(hclink.LNK_REF_WORD, @parama[PARAM_VALUE], 1);
+        hcasm.emit_tok(hclink.LNK_REF_NAME, parama[PARAM_LABEL], string.length(parama[PARAM_LABEL]));
+        hcasm.emit_tok(hclink.LNK_REF_EMIT,0,0);
+        if(\string.comp(ins[INSTR_CMD], "CALL")) do
+            hcasm.emit_tok(hclink.LNK_FUNC_USE, parama[PARAM_LABEL], string.length(parama[PARAM_LABEL]));
+        end
+    end
+end
+
 instr_simple_byte_value_word(ins, parama) do
     hcasm.emit_asm(ins[INSTR_ASM]);
     ie(\parama[PARAM_LABEL]) do
@@ -64,6 +80,7 @@ instr_simple_byte_value_word(ins, parama) do
         end
     end
 end
+
 
 get_ld_reg_byte(reg) do
     var opcode;
@@ -189,8 +206,12 @@ gen0(type, instr) do
 end
 
 gen1(type, instr, parama) do
-    ie(type = GEN_SIMPLE_WITH_VALUE_WORD) do
+    ie(type = GEN_SIMPLE_WITH_VALUE_WORD_PARAMA) do
         instr_simple_byte_value_word(instr, parama);
+    end else ie(type = GEN_SIMPLE_WITH_VALUE_BYTE_PARAMA) do
+        instr_simple_byte_value_byte(instr, parama);
+    end else ie(type = GEN_SIMPLE) do
+        instr_simple_byte(instr);
     end else hcasm.error("GEN1 NOT IMPLEMENTED");
 end
 
@@ -203,11 +224,23 @@ gen2(type, instr, parama, paramb) do
         instr_ld_reg_mem(instr, parama, paramb);
     end else ie(type = GEN_LD_REG_VAL) do
         instr_ld_reg_val(instr, parama, paramb);
+    end else ie(type = GEN_SIMPLE) do
+        instr_simple_byte(instr);
+    end else ie(type = GEN_SIMPLE_WITH_VALUE_WORD_PARAMA) do
+        instr_simple_byte_value_word(instr, parama);
+    end else ie(type = GEN_SIMPLE_WITH_VALUE_WORD_PARAMB) do
+        instr_simple_byte_value_word(instr, paramb);
+    end else ie(type = GEN_SIMPLE_WITH_VALUE_BYTE_PARAMA) do
+        instr_simple_byte_value_byte(instr, parama);
+    end else ie(type = GEN_SIMPLE_WITH_VALUE_BYTE_PARAMB) do
+        instr_simple_byte_value_byte(instr, paramb);
     end else hcasm.error("GEN0 NOT IMPLEMENTED");
 end
 
 gen3(type, instr, parama, paramb, paramc) do
-    hcasm.error("GEN3 NOT IMPLEMENTED");
+    ie(type = GEN_SIMPLE) do
+        instr_simple_byte(instr);
+    end else hcasm.error("GEN3 NOT IMPLEMENTED");
 end
 
 
@@ -215,12 +248,29 @@ get_instructions() return [
         [GEN_SIMPLE, "NOP", "00", 0],
         [GEN_SIMPLE, "HLT", "76", 0],
         [GEN_SIMPLE, "RET", "c9", 0],
+        [GEN_SIMPLE, "PUSH", "c5", 1, ARG_REG, REG_BC],
+        [GEN_SIMPLE, "PUSH", "d5", 1, ARG_REG, REG_DE],
+        [GEN_SIMPLE, "PUSH", "e5", 1, ARG_REG, REG_HL],
+        [GEN_SIMPLE, "PUSH", "f5", 1, ARG_REG, REG_AF],
+        [GEN_SIMPLE, "PUSH", "dde5", 1, ARG_REG, REG_IX],
+        [GEN_SIMPLE, "PUSH", "fde5", 1, ARG_REG, REG_IY],
+        [GEN_SIMPLE, "POP", "c1", 1, ARG_REG, REG_BC],
+        [GEN_SIMPLE, "POP", "d1", 1, ARG_REG, REG_DE],
+        [GEN_SIMPLE, "POP", "e1", 1, ARG_REG, REG_HL],
+        [GEN_SIMPLE, "POP", "f1", 1, ARG_REG, REG_AF],
+        [GEN_SIMPLE, "POP", "dde1", 1, ARG_REG, REG_IX],
+        [GEN_SIMPLE, "POP", "fde1", 1, ARG_REG, REG_IY],
+        [GEN_SIMPLE, "ADD", "dd39", 2, ARG_REG, REG_IX, ARG_REG, REG_SP],
+        [GEN_SIMPLE, "LD", "dd39", 2, ARG_REG, REG_IX, ARG_REG, REG_SP],
+        [GEN_SIMPLE_WITH_VALUE_WORD_PARAMB, "LD", "dd21", 2, ARG_REG, REG_IX, ARG_VALUE, REG_NONE],
+        [GEN_SIMPLE_WITH_VALUE_BYTE_PARAMB, "LD", "dd5e", 2, ARG_REG, REG_E, ARG_PTR_REG_AND_VALUE, REG_IX],
+        [GEN_SIMPLE_WITH_VALUE_BYTE_PARAMB, "LD", "dd5e", 2, ARG_REG, REG_E, ARG_PTR_REG, REG_IX],
         [GEN_LD_REG_REG, "LD", "", 2, ARG_REG, REG_NONE, ARG_REG, REG_NONE],
         [GEN_LD_MEM_REG, "LD", "", 2, ARG_PTR_REG, REG_NONE, ARG_REG, REG_NONE],
         [GEN_LD_REG_MEM, "LD", "", 2, ARG_REG, REG_NONE, ARG_PTR_REG, REG_NONE],
         [GEN_LD_REG_VAL, "LD", "", 2, ARG_REG, REG_NONE, ARG_VALUE, REG_NONE],
-        [GEN_SIMPLE_WITH_VALUE_WORD, "CALL", "cd", 1, ARG_VALUE, REG_NONE],
-        [GEN_SIMPLE_WITH_VALUE_WORD, "JP", "c3", 1, ARG_VALUE, REG_NONE],
+        [GEN_SIMPLE_WITH_VALUE_WORD_PARAMA, "CALL", "cd", 1, ARG_VALUE, REG_NONE],
+        [GEN_SIMPLE_WITH_VALUE_WORD_PARAMA, "JP", "c3", 1, ARG_VALUE, REG_NONE],
         [0]
     ];
 
