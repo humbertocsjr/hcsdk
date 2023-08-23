@@ -214,6 +214,7 @@ end
 get_instructions() return [
         [GEN_SIMPLE, "NOP", "00", 0],
         [GEN_SIMPLE, "HLT", "76", 0],
+        [GEN_SIMPLE, "RET", "c9", 0],
         [GEN_LD_REG_REG, "LD", "", 2, ARG_REG, REG_NONE, ARG_REG, REG_NONE],
         [GEN_LD_MEM_REG, "LD", "", 2, ARG_PTR_REG, REG_NONE, ARG_REG, REG_NONE],
         [GEN_LD_REG_MEM, "LD", "", 2, ARG_REG, REG_NONE, ARG_PTR_REG, REG_NONE],

@@ -7,8 +7,6 @@ public const TOK_LEN = 80;
 const LINE_LEN = 256;
 const LINE_BUF_LEN = 400;
 const BUF_LEN = 130;
-const VAR_BUF_LEN = 1024;
-const VAR_SIZE = 32;
 const TOK_SIZE = 128;
 
 struct INFO = INFO_LINE, INFO_COL;
@@ -16,11 +14,6 @@ struct INFO = INFO_LINE, INFO_COL;
 var _segment;
 var _can_auto;
 var _var_pos;
-var _locals_buf::VAR_BUF_LEN;
-var _locals_buf_last;
-var _locals[VAR_SIZE];
-var _locals_count;
-var _level;
 var _in;
 var _in_eof;
 var _in_name::NAME_LEN;
@@ -142,11 +135,13 @@ end
 
 tokenize() do
     var i, c, n, u, pos, str_tmp::2, j;
-    _tok_buf::0 := 0;
+    t.memfill(_tok_buf, 0, LINE_BUF_LEN);
     pos := 1;
     _tok_curr := 0;
     for(i = 0, TOK_SIZE) do
         _tok[i] := tokens.TK_NONE;
+        _tok_start[i] := 0;
+        _tok_len[i] := 0;
     end
     for(i = 0, _line_len+1) do
         _info[INFO_COL] := i + 1;
