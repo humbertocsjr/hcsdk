@@ -12,6 +12,7 @@ include hclink/conf.mk
 include hcexe/conf.mk
 include test/conf.mk
 include distro/conf.mk
+include libb/conf.mk
 
 bin: 
 	mkdir -p bin
@@ -22,7 +23,7 @@ binz80:
 bini86: 
 	mkdir -p bini86
 
-build: $(HCB) $(HCASM) $(HCLINK) $(HCEXE)
+build: $(HCB) $(HCASM) $(HCLINK) $(HCEXE) $(LIBB)
 
 
 clean:

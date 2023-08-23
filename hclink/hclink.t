@@ -530,8 +530,8 @@ do
     
     name_clear_all();
 
-    type_size := t.getarg(1, type, 10);
-    out_size := t.getarg(2, _out_name, 10);
+    type_size := t.getarg(1, type, NAME_LEN);
+    out_size := t.getarg(2, _out_name, NAME_LEN);
 
     _org := 0;
     _pos := 0;
@@ -570,6 +570,8 @@ do
         if(_out = -1) do
             error("Output file can't be opened");
         end
+        io.writes(" - Output file..: ");
+        io.writeln(_out_name);
         io.writes(" - Binary origin: 0x");
         io.writeln(string.ntoa(_org, 16));
         ie(_library) do
