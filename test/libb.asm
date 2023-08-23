@@ -1,13 +1,19 @@
 proc _start
     call main
-    ld e, 65
-    ld c, 2
-    call 5
     jp 0
 endproc _start
 
-proc putchar
-    ld e, 65
+proc teststring
+    ld e, 'T'
+    ld c, 2
+    call 5
+    ld e, 'E'
+    ld c, 2
+    call 5
+    ld e, 'S'
+    ld c, 2
+    call 5
+    ld e, 'T'
     ld c, 2
     call 5
     ret

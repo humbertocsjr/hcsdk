@@ -1,10 +1,5 @@
 
 main()
 {
-    putchar();
-}
-
-test()
-{
-
+    teststring();
 }
