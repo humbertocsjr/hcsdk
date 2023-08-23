@@ -16,10 +16,10 @@ HCBZ80 TEST
     Compile B Language Tokens
     In..: TEST.BTK
     Out.: TEST.OBJ
-HCEXE TEST LIBB.LIB TEST.OBJ
+HCEXE TEST CPMZ80.LIB TEST.OBJ
     Add called functions from library
     Out.: TEST.LIB
-    Lib.: LIBB.LIB
+    Lib.: CPMZ80.LIB
     In..: TEST.OBJ
 HCLINK COM TEST TEST.LIB
     Link project library to executable

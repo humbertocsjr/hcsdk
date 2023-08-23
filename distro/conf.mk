@@ -8,6 +8,7 @@ distro/msx720.dsk: $(wildcard binz80/*.com) $(wildcard distro/msx.*) $(wildcard 
 	mcopy -i $@ distro/msxbin/MSXDOS.SYS ::/MSXDOS.SYS
 	mcopy -i $@ distro/msxbin/COMMAND.COM ::/COMMAND.COM
 	mcopy -i $@ binz80/*.com ::/
+	mcopy -i $@ binz80/*.lib ::/
 	mcopy -i $@ test/*.b ::/
 	mcopy -i $@ test/*.asm ::/
 	mcopy -i $@ distro/msx.bat ::/BUILD.BAT
@@ -17,6 +18,7 @@ distro/dos1440.img: $(wildcard bini86/*.com) $(wildcard distro/dos.*) $(wildcard
 	dd if=/dev/zero of=$@ bs=1024 count=1440
 	mformat -f 1440 -i $@
 	mcopy -i $@ bini86/*.com ::/
+	mcopy -i $@ bini86/*.lib ::/
 	mcopy -i $@ test/*.b ::/
 	mcopy -i $@ test/*.asm ::/
 
