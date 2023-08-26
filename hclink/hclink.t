@@ -565,13 +565,13 @@ do
 
     ie (out_size > 0) do
         t.memcopy(name, _out_name, out_size);
-        t.memcopy(@name::out_size, ext, 4);
+        t.memcopy(@name::out_size, ext, 5);
         _out := t.open(name, T3X.OWRITE);
         if(_out = -1) do
             error("Output file can't be opened");
         end
         io.writes(" - Output file..: ");
-        io.writeln(_out_name);
+        io.writeln(name);
         io.writes(" - Binary origin: 0x");
         io.writeln(string.ntoa(_org, 16));
         ie(_library) do

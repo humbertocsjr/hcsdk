@@ -140,6 +140,9 @@ tokenize() do
             end else ie(c = ',') do
                 _tok[_tok_curr] := tokens.TK_COMMA;
                 _tok_curr := _tok_curr + 1;
+            end else ie(c = ':') do
+                _tok[_tok_curr] := tokens.TK_COLON;
+                _tok_curr := _tok_curr + 1;
             end else ie(c = ';') do
                 _tok[_tok_curr] := tokens.TK_END_COMMAND;
                 _tok_curr := _tok_curr + 1;
@@ -192,8 +195,35 @@ tokenize() do
                 error("Char unknown");
             end
         end else ie(_tok[_tok_curr] = tokens.TK_STR) do
-            ie(c = '\\' /\ n = '"') do
+            ie(c = '*' /\ n = '"') do
                 _tok_buf::pos := '"';
+                pos := pos + 1;
+            end else ie(c = '*' /\ n = '0') do
+                _tok_buf::pos := 0;
+                pos := pos + 1;
+            end else ie(c = '*' /\ n = 'e') do
+                _tok_buf::pos := 26;
+                pos := pos + 1;
+            end else ie(c = '*' /\ n = '(') do
+                _tok_buf::pos := '{';
+                pos := pos + 1;
+            end else ie(c = '*' /\ n = ')') do
+                _tok_buf::pos := '}';
+                pos := pos + 1;
+            end else ie(c = '*' /\ n = 't') do
+                _tok_buf::pos := '\t';
+                pos := pos + 1;
+            end else ie(c = '*' /\ n = 'n') do
+                _tok_buf::pos := '\n';
+                pos := pos + 1;
+            end else ie(c = '*' /\ n = 'r') do
+                _tok_buf::pos := '\r';
+                pos := pos + 1;
+            end else ie(c = '*' /\ n = '*') do
+                _tok_buf::pos := '*';
+                pos := pos + 1;
+            end else ie(c = '*') do
+                _tok_buf::pos := n;
                 pos := pos + 1;
             end else ie(c \= '"') do
                 _tok_buf::pos := c;
@@ -208,7 +238,7 @@ tokenize() do
                 _tok_curr := _tok_curr + 1;
             end
         end else ie(_tok[_tok_curr] = tokens.TK_ID) do
-            ie(char.alpha(c) \/ c = '_') do
+            ie(char.alpha(c) \/ c = '_' \/ char.digit(c)) do
                 _tok_buf::pos := c;
             end else do
                 i := i - 1;
@@ -386,13 +416,16 @@ do
 
     _ids := 
     [
+        [tokens.TK_ID_FOR, "for"],
         [tokens.TK_ID_WHILE, "while"],
+        [tokens.TK_ID_UNTIL, "until"],
         [tokens.TK_ID_IF, "if"],
         [tokens.TK_ID_ELSE, "else"],
         [tokens.TK_ID_AUTO, "auto"],
-        [tokens.TK_ID_REPEAT, "repeat"],
         [tokens.TK_ID_EXTRN, "extrn"],
         [tokens.TK_ID_RETURN, "return"],
+        [tokens.TK_ID_GOTO, "goto"],
+        [tokens.TK_ID_BREAK, "break"],
         [0,0]
     ];
     

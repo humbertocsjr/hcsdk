@@ -12,6 +12,7 @@ const BUF_LEN = 130;
 const VAR_BUF_LEN = 1024;
 const VAR_SIZE = 32;
 
+var _break_num_label;
 var _can_auto;
 var _var_pos;
 var _locals_buf::VAR_BUF_LEN;
@@ -224,6 +225,7 @@ end
 
 decl compile(0);
 decl do_expr(0);
+decl do_atrib(1);
 
 
 do_auto() do
@@ -309,7 +311,7 @@ do_args() do
     return stack_size;
 end
 
-expr5() do
+expr6() do
     var i, val, neg, name::TOK_LEN;
     var stack_size;
     neg := 0;
@@ -337,6 +339,9 @@ expr5() do
                 stack_size := do_args();
                 asm_call(name);
                 if(stack_size \= 0) asm_call_stack_restore(stack_size);
+            end else ie(_next = tokens.TK_ATRIB) do
+                next();
+                do_atrib(name);
             end else do
                 asm_rega_from_local_contents(name);
             end
@@ -344,20 +349,21 @@ expr5() do
     end else ie(_curr = tokens.TK_PARAM_OPEN) do
         next();
         do_expr();
-        match(_curr = tokens.TK_PARAM_CLOSE, "'(' expected.");
+        next();
+        match(tokens.TK_PARAM_CLOSE, "')' expected.");
     end else error("Expression expected");
 end
 
 
-expr4() do
+expr5() do
     var op;
-    expr5();
+    expr6();
     while(_next = tokens.TK_BIT_SHL \/ _next = tokens.TK_BIT_SHR)do
         op := _next;
         next();
         next();
         asm_rega_push();
-        expr5();
+        expr6();
         ie(op = tokens.TK_BIT_SHL)
             asm_shift_left_pop_from_rega();
         else ie(op = tokens.TK_BIT_SHR)
@@ -366,15 +372,15 @@ expr4() do
     end
 end
 
-expr3() do
+expr4() do
     var op;
-    expr4();
+    expr5();
     while(_next = tokens.TK_MATH_MULTIPLY \/ _next = tokens.TK_MATH_DIVIDE \/ _next = tokens.TK_MATH_MODULE)do
         op := _next;
         next();
         next();
         asm_rega_push();
-        expr4();
+        expr5();
         ie(op = tokens.TK_MATH_MULTIPLY)
             asm_multiply_pop_from_rega();
         else ie(op = tokens.TK_MATH_DIVIDE)
@@ -385,19 +391,52 @@ expr3() do
     end
 end
 
-expr2() do
+expr3() do
     var op;
-    expr3();
+    expr4();
     while(_next = tokens.TK_MATH_SUBTRACT \/ _next = tokens.TK_MATH_SUM)do
         op := _next;
         next();
         next();
         asm_rega_push();
-        expr3();
+        expr4();
         ie(op = tokens.TK_MATH_SUM)
             asm_add_pop_from_rega();
         else ie(op = tokens.TK_MATH_SUBTRACT)
             asm_subtract_pop_from_rega();
+        else error("Operation unknown");
+    end
+end
+
+expr2() do
+    var op;
+    expr3();
+    while
+    (
+        _next = tokens.TK_CMP_EQUAL \/ 
+        _next = tokens.TK_CMP_NOT_EQUAL \/ 
+        _next = tokens.TK_CMP_LESSER \/ 
+        _next = tokens.TK_CMP_LESSER_EQUAL \/ 
+        _next = tokens.TK_CMP_GREATER \/ 
+        _next = tokens.TK_CMP_GREATER_EQUAL 
+    ) do
+        op := _next;
+        next();
+        next();
+        asm_rega_push();
+        expr3();
+        ie(op = tokens.TK_CMP_EQUAL)
+            asm_equal_pop_from_rega();
+        else ie(op = tokens.TK_CMP_NOT_EQUAL)
+            asm_not_equal_pop_from_rega();
+        else ie(op = tokens.TK_CMP_LESSER)
+            asm_lesser_pop_from_rega();
+        else ie(op = tokens.TK_CMP_LESSER_EQUAL)
+            asm_lesser_equal_pop_from_rega();
+        else ie(op = tokens.TK_CMP_GREATER)
+            asm_greater_pop_from_rega();
+        else ie(op = tokens.TK_CMP_GREATER_EQUAL)
+            asm_greater_equal_pop_from_rega();
         else error("Operation unknown");
     end
 end
@@ -468,8 +507,6 @@ do_atrib(name) do
     next();
     do_expr();
     asm_rega_to_local_contents(name);
-    next();
-    match_eol();
 end
 
 do_id() do
@@ -484,6 +521,12 @@ do_id() do
         end
     end else ie(_curr = tokens.TK_ATRIB) do
         do_atrib(name);
+        next();
+        match_eol();
+    end else ie(_curr = tokens.TK_COLON) do
+        emit_tok(hclink.LNK_GLOBAL_PTR, name, string.length(name));
+        next();
+        match_eol();
     end else do
         io.writes("[ ID Type not implemented -> Token ID:");
         io.writes(string.ntoa(_curr, 10));
@@ -501,6 +544,7 @@ do_if() do
     next();
     match(tokens.TK_PARAM_CLOSE, "')' expected");
     asm_jmp_if_false(lbl_false);
+    next();
     compile();
     ie(_curr = tokens.TK_ID_ELSE) do
         lbl_end := asm_new_num_label();
@@ -514,8 +558,11 @@ do_if() do
 end
 
 do_while() do
-    var lbl_end, lbl_start;
+    var lbl_end, lbl_start, old_break;
     lbl_end := asm_new_num_label();
+    lbl_start := asm_new_num_label();
+    old_break := _break_num_label;
+    _break_num_label := lbl_end;
     next();
     match(tokens.TK_PARAM_OPEN, "'(' expected");
     next();
@@ -524,14 +571,19 @@ do_while() do
     next();
     match(tokens.TK_PARAM_CLOSE, "')' expected");
     asm_jmp_if_false(lbl_end);
+    next();
     compile();
     asm_jmp(lbl_start);
     asm_num_label(lbl_end);
+    _break_num_label := old_break;
 end
 
 do_until() do
-    var lbl_end, lbl_start;
+    var lbl_end, lbl_start, old_break;
     lbl_end := asm_new_num_label();
+    lbl_start := asm_new_num_label();
+    old_break := _break_num_label;
+    _break_num_label := lbl_end;
     next();
     match(tokens.TK_PARAM_OPEN, "'(' expected");
     next();
@@ -540,9 +592,61 @@ do_until() do
     next();
     match(tokens.TK_PARAM_CLOSE, "')' expected");
     asm_jmp_if_true(lbl_end);
+    next();
     compile();
     asm_jmp(lbl_start);
     asm_num_label(lbl_end);
+    _break_num_label := old_break;
+end
+
+do_for() do
+    var lbl_end, lbl_start, lbl_loop, lbl_code, old_break;
+    lbl_end := asm_new_num_label();
+    lbl_start := asm_new_num_label();
+    lbl_loop := asm_new_num_label();
+    lbl_code := asm_new_num_label();
+    old_break := _break_num_label;
+    _break_num_label := lbl_end;
+    next();
+    match(tokens.TK_PARAM_OPEN, "'(' expected");
+    next();
+    do_expr();
+    next();
+    match(tokens.TK_END_COMMAND, "';' expected");
+    next();
+    asm_num_label(lbl_start);
+    do_expr();
+    asm_jmp(lbl_code);
+    next();
+    match(tokens.TK_END_COMMAND, "';' expected");
+    next();
+    asm_num_label(lbl_loop);
+    do_expr();
+    asm_jmp(lbl_start);
+    next();
+    match(tokens.TK_PARAM_CLOSE, "')' expected");
+    asm_num_label(lbl_code);
+    asm_jmp_if_false(lbl_end);
+    next();
+    compile();
+    asm_jmp(lbl_loop);
+    asm_num_label(lbl_end);
+    _break_num_label := old_break;
+end
+
+do_goto() do
+    next();
+    asm_jmp_name(_curr_text);
+    next();
+    match_eol();
+end
+
+do_break() do
+    next();
+    if(_break_num_label = -1) error("Break detected without loop");
+    asm_jmp(_break_num_label);
+    next();
+    match_eol();
 end
 
 compile() do
@@ -559,15 +663,27 @@ compile() do
             do_id();
         end else ie(_curr = tokens.TK_ID_IF) do
             do_if();
+        end else ie(_curr = tokens.TK_ID_GOTO) do
+            do_goto();
+        end else ie(_curr = tokens.TK_ID_FOR) do
+            do_for();
         end else ie(_curr = tokens.TK_ID_WHILE) do
             do_while();
         end else ie(_curr = tokens.TK_ID_UNTIL) do
             do_until();
         end else ie(_curr = tokens.TK_BLOCK_OPEN) do
             do_block();
+        end else ie(_curr = tokens.TK_ID_BREAK) do
+            do_break();
         end else do
             io.writes("[ Token not implemented ID:");
             io.writes(string.ntoa(_curr, 10));
+            io.writes(" :");
+            io.writes(_in_name);
+            io.writes(":");
+            io.writes(string.ntoa(_curr_line, 10));
+            io.writes(":");
+            io.writes(string.ntoa(_curr_col, 10));
             io.writes(" ]");
         end
     end
@@ -579,6 +695,7 @@ compile_file(filename) do
         error("File can't be opened");
     end
     _level := 0;
+    _break_num_label := -1;
     next();
     while (next()) do
         compile();

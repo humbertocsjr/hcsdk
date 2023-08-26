@@ -13,19 +13,3 @@ proc putchar
     pop ix
     ret
 endproc putchar
-
-proc teststring
-    ld e, 'T'
-    ld c, 2
-    call 5
-    ld e, 'E'
-    ld c, 2
-    call 5
-    ld e, 'S'
-    ld c, 2
-    call 5
-    ld e, 'T'
-    ld c, 2
-    call 5
-    ret
-endproc teststring

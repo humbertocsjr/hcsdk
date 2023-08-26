@@ -149,6 +149,7 @@ tokenize() do
         n := _line::(i+1);
         u := char.ucase(c);
         if(c = 0) leave;
+        if(c = ';') leave;
         ie(_tok[_tok_curr] = tokens.TK_NONE) do
             _tok_start[_tok_curr] := 0;
             _tok_col[_tok_curr] := i;
@@ -247,7 +248,7 @@ tokenize() do
                 _tok_curr := _tok_curr + 1;
             end
         end else ie(_tok[_tok_curr] = tokens.TK_ID) do
-            ie(char.alpha(c) \/ c = '_' \/ c = '.') do
+            ie(char.alpha(c) \/ c = '_' \/ c = '.' \/ char.digit(c)) do
                 _tok_buf::pos := c;
             end else do
                 i := i - 1;
@@ -497,7 +498,7 @@ var _paramb[PARAM_LIST];
 var _paramc[PARAM_LIST];
 
 compile() do
-    var exists, params, i, cmd::TOK_LEN, cmd_len, ok;
+    var exists, params, i, cmd::TOK_LEN, cmd_len, ok, tmp;
     emit_tok(hclink.LNK_MARKER_COL, @_curr_col, 2);
     
     params := 0;
@@ -525,6 +526,40 @@ compile() do
             next();
             emit_tok(hclink.LNK_FUNC_USE, _curr_text, _curr_len);
             return;
+        end else ie(\string.comp(cmd, "DB")) do
+            while(next()) do
+                ie(_curr = tokens.TK_NUM) do
+                    tmp :=  do_aton(_curr_text, _curr_len);
+                    emit_tok(_segment, @tmp, 1);
+                end else ie(_curr = tokens.TK_STR) do
+                    emit_tok(_segment, _curr_text, _curr_len);
+                end else ie(_curr = tokens.TK_ID) do
+                    tmp := 0;
+                    emit_tok(hclink.LNK_REF_START, 0, 0);
+                    emit_tok(hclink.LNK_REF_BYTE, @tmp, 1);
+                    emit_tok(hclink.LNK_REF_NAME, _curr_text, _curr_len);
+                    emit_tok(hclink.LNK_REF_EMIT, 0, 0);
+                end else error("Data type unknown");
+                if(_next = tokens.TK_COMMA) next();
+            end
+            return;
+        end else ie(\string.comp(cmd, "DW")) do
+            while(next()) do
+                ie(_curr = tokens.TK_NUM) do
+                    tmp :=  do_aton(_curr_text, _curr_len);
+                    emit_tok(_segment, @tmp, 2);
+                end else ie(_curr = tokens.TK_STR) do
+                    emit_tok(_segment, _curr_text, _curr_len);
+                end else ie(_curr = tokens.TK_ID) do
+                    tmp := 0;
+                    emit_tok(hclink.LNK_REF_START, 0, 0);
+                    emit_tok(hclink.LNK_REF_WORD, @tmp, 2);
+                    emit_tok(hclink.LNK_REF_NAME, _curr_text, _curr_len);
+                    emit_tok(hclink.LNK_REF_EMIT, 0, 0);
+                end else error("Data type unknown");
+                if(_next = tokens.TK_COMMA) next();
+            end
+            return;
         end else ie(\string.comp(cmd, ".CODE")) do
             next();
             emit_tok(hclink.LNK_CODE, 0, 0);
@@ -536,7 +571,9 @@ compile() do
             _segment := hclink.LNK_DATA;
             return;
         end else ie(\string.comp(cmd, "LABEL")) do
-                emit_tok(hclink.LNK_GLOBAL_PTR, _prev_text, _prev_len);
+            next();
+            emit_tok(hclink.LNK_GLOBAL_PTR, _curr_text, _curr_len);
+            return;
         end else do
         end
 
@@ -544,7 +581,7 @@ compile() do
         exists := 0;
         while(_instrs[i][INSTR_GEN] \= 0) do
             if(\string.comp(_instrs[i][INSTR_CMD], cmd)) do
-                if(_instrs[i][INSTR_ARGS] = 0) do
+                if(_instrs[i][INSTR_ARGS] = 0 /\ _next = tokens.TK_END) do
                     gen0(_instrs[i][INSTR_GEN], _instrs[i]);
                     return;
                 end

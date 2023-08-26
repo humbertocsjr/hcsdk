@@ -7,9 +7,9 @@ use hcltks;
 
 struct ARGS_LIST = ARG_NONE, ARG_VALUE, ARG_REG, ARG_PTR_REG, 
     ARG_PTR_REG_AND_VALUE, ARG_PTR_VALUE;
-struct REGS_LIST = REG_NONE, REG_A, REG_B, REG_C, REG_D, REG_E, REG_F, REG_H, REG_L, REG_AF, 
-    REG_HL, REG_BC, REG_DE, REG_SP, REG_IX, REG_IY, REG_JP_Z, REG_JP_NZ, REG_JP_NC, REG_JP_C,
-    REG_JP_PO, REG_JP_PE, REG_JP_P, REG_JP_M;
+struct REGS_LIST = REG_NONE, REG_AX, REG_BX, REG_CX, REG_DX, REG_AL, REG_AH, REG_BL, 
+    REG_BH, REG_CL, REG_CH, REG_DL, REG_DH, REG_ES, REG_DS, REG_BP, REG_SI, REG_DI, 
+    REG_SP, REG_CS;
 struct INSTR_LIST = INSTR_GEN, INSTR_CMD, INSTR_ASM, INSTR_ARGS, 
     INSTR_ARGA_TYPE, INSTR_ARGA_REG, 
     INSTR_ARGB_TYPE, INSTR_ARGB_REG, 
@@ -28,29 +28,25 @@ decl gen2(4);
 decl gen3(5);
 
 parse_reg(id) do
-    ie(\string.comp("A", id)) return REG_A;
-    else ie(\string.comp("B", id)) return REG_B;
-    else ie(\string.comp("C", id)) return REG_C;
-    else ie(\string.comp("D", id)) return REG_D;
-    else ie(\string.comp("E", id)) return REG_E;
-    else ie(\string.comp("F", id)) return REG_F;
-    else ie(\string.comp("H", id)) return REG_H;
-    else ie(\string.comp("L", id)) return REG_L;
-    else ie(\string.comp("AF", id)) return REG_AF;
-    else ie(\string.comp("BC", id)) return REG_BC;
-    else ie(\string.comp("DE", id)) return REG_DE;
-    else ie(\string.comp("HL", id)) return REG_HL;
-    else ie(\string.comp("IX", id)) return REG_IX;
-    else ie(\string.comp("IY", id)) return REG_IY;
+    ie(\string.comp("AX", id)) return REG_AX;
+    else ie(\string.comp("AL", id)) return REG_AL;
+    else ie(\string.comp("AH", id)) return REG_AH;
+    else ie(\string.comp("BX", id)) return REG_BX;
+    else ie(\string.comp("BL", id)) return REG_BL;
+    else ie(\string.comp("BH", id)) return REG_BH;
+    else ie(\string.comp("CX", id)) return REG_CX;
+    else ie(\string.comp("CL", id)) return REG_CL;
+    else ie(\string.comp("CH", id)) return REG_CH;
+    else ie(\string.comp("DX", id)) return REG_DX;
+    else ie(\string.comp("DL", id)) return REG_DL;
+    else ie(\string.comp("DH", id)) return REG_DH;
+    else ie(\string.comp("SI", id)) return REG_SI;
+    else ie(\string.comp("DI", id)) return REG_DI;
     else ie(\string.comp("SP", id)) return REG_SP;
-    else ie(\string.comp("C", id)) return REG_JP_C;
-    else ie(\string.comp("M", id)) return REG_JP_M;
-    else ie(\string.comp("NC", id)) return REG_JP_NC;
-    else ie(\string.comp("NZ", id)) return REG_JP_NZ;
-    else ie(\string.comp("P", id)) return REG_JP_P;
-    else ie(\string.comp("PE", id)) return REG_JP_PE;
-    else ie(\string.comp("PO", id)) return REG_JP_PO;
-    else ie(\string.comp("Z", id)) return REG_JP_Z;
+    else ie(\string.comp("BP", id)) return REG_BP;
+    else ie(\string.comp("CS", id)) return REG_CS;
+    else ie(\string.comp("DS", id)) return REG_DS;
+    else ie(\string.comp("ES", id)) return REG_ES;
     else return REG_NONE;
 end
 
